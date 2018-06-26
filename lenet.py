@@ -212,8 +212,8 @@ if __name__ == "__main__":
     X_test, y_test = testset['features'], testset['labels']
 
     if args.train:
-        train(X_train, y_train, net_weights=args.net_weights, epochs=args.epochs,
-                batch_size=args.batch_size, learning_rate=args.learning_rate, save_graph=args.save_graph)
+        train(X_train, y_train, epochs=args.epochs, batch_size=args.batch_size,
+              learning_rate=args.learning_rate, save_graph=args.save_graph)
 
     if args.infer:
         inference(args.infer, args.save_graph, args.labels)
