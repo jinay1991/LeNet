@@ -101,13 +101,14 @@ def auto_contrast(img):
     img2 = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)  # convert from LAB to RGB
     return img2
 
-def load_data(url=None, save_pickle=True):
+def load_data(url=None, save_pickle=True, augment=True):
     """
     Downloads dataset and extracts train/test images url and their labels
 
     Args
         url (str) - url for traffic-sign-data.zip
         save_pickle (bool) - saves train.p and test.p
+        augment (bool) - enables data augmentations
 
     Returns
         x_train (ndarray) - training images
@@ -137,18 +138,19 @@ def load_data(url=None, save_pickle=True):
         X_train = np.concatenate((X_train, X_valid), axis=0)
         y_train = np.concatenate((y_train, y_valid), axis=0)
 
+        if augment:
+            # Perform Pre-processing for entire dataset (training, test, validation sets)
+            X_train, y_train = generate_additional_data_rotate(X_train, y_train)
+            X_train, y_train = generate_additional_data_translate(X_train, y_train)
 
-        # Perform Pre-processing for entire dataset (training, test, validation sets)
-        X_train, y_train = generate_additional_data_rotate(X_train, y_train)
-        X_train, y_train = generate_additional_data_translate(X_train, y_train)
+            # adjust contrast
+            X_train = np.array([auto_contrast(x) for x in X_train])
+            X_test = np.array([auto_contrast(x) for x in X_test])
 
-        # adjust contrast
-        X_train = np.array([auto_contrast(x) for x in X_train])
-        X_test = np.array([auto_contrast(x) for x in X_test])
+            print("Save datasets as form of pickle 'train.p' and 'test.p'")
+            pickle.dump({'features': X_train, 'labels': y_train}, open("train.p", "wb"))
+            pickle.dump({'features': X_test, 'labels': y_test}, open("test.p", "wb"))
 
-        print("Save datasets as form of pickle 'train.p' and 'test.p'")
-        pickle.dump({'features': X_train, 'labels': y_train}, open("train.p", "wb"))
-        pickle.dump({'features': X_test, 'labels': y_test}, open("test.p", "wb"))
         np.savetxt("labels.txt", np.unique(y_train))
     else:
         print("Loading dataset information from pickle files...")
@@ -174,6 +176,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", help="dataset zip url",
                         default='https://d17h27t6h515a5.cloudfront.net/topher/2017/February/5898cd6f_traffic-signs-data/traffic-signs-data.zip')
+    parser.add_argument("--augment", help="dataset augmentation enabled/disable", action="store_true")
     args = parser.parse_args()
 
     print(args)
