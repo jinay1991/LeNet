@@ -101,36 +101,62 @@ def auto_contrast(img):
     img2 = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)  # convert from LAB to RGB
     return img2
 
-def load_data(url):
-    download(url, 'traffic-sign-data.zip')
-    uncompress('traffic-sign-data.zip')
+def load_data(url=None, save_pickle=True):
+    """
+    Downloads dataset and extracts train/test images url and their labels
 
-    training_file = 'train.p'
-    validation_file = 'valid.p'
-    testing_file = 'test.p'
+    Args
+        url (str) - url for traffic-sign-data.zip
+        save_pickle (bool) - saves train.p and test.p
 
-    with open(training_file, mode='rb') as f:
-        train = pickle.load(f)
-    with open(validation_file, mode='rb') as f:
-        valid = pickle.load(f)
-    with open(testing_file, mode='rb') as f:
-        test = pickle.load(f)
+    Returns
+        x_train (ndarray) - training images
+        y_train (ndarray) - labels for each training images
+        x_test  (ndarray) - test images
+        y_test  (ndarray) - labels for each test images
+    """
+    if url:
+        download(url, 'traffic-sign-data.zip')
+        uncompress('traffic-sign-data.zip')
 
-    X_train, y_train = train['features'], train['labels']
-    X_valid, y_valid = valid['features'], valid['labels']
-    X_test, y_test = test['features'], test['labels']
+        training_file = 'train.p'
+        validation_file = 'valid.p'
+        testing_file = 'test.p'
 
-    X_train = np.concatenate((X_train, X_valid), axis=0)
-    y_train = np.concatenate((y_train, y_valid), axis=0)
-    np.savetxt("labels.txt", np.unique(y_train))
+        with open(training_file, mode='rb') as f:
+            train = pickle.load(f)
+        with open(validation_file, mode='rb') as f:
+            valid = pickle.load(f)
+        with open(testing_file, mode='rb') as f:
+            test = pickle.load(f)
 
-    # Perform Pre-processing for entire dataset (training, test, validation sets)
-    X_train, y_train = generate_additional_data_rotate(X_train, y_train)
-    X_train, y_train = generate_additional_data_translate(X_train, y_train)
+        X_train, y_train = train['features'], train['labels']
+        X_valid, y_valid = valid['features'], valid['labels']
+        X_test, y_test = test['features'], test['labels']
 
-    # adjust contrast
-    X_train = np.array([auto_contrast(x) for x in X_train])
-    X_test = np.array([auto_contrast(x) for x in X_test])
+        X_train = np.concatenate((X_train, X_valid), axis=0)
+        y_train = np.concatenate((y_train, y_valid), axis=0)
+
+
+        # Perform Pre-processing for entire dataset (training, test, validation sets)
+        X_train, y_train = generate_additional_data_rotate(X_train, y_train)
+        X_train, y_train = generate_additional_data_translate(X_train, y_train)
+
+        # adjust contrast
+        X_train = np.array([auto_contrast(x) for x in X_train])
+        X_test = np.array([auto_contrast(x) for x in X_test])
+
+        print("Save datasets as form of pickle 'train.p' and 'test.p'")
+        pickle.dump({'features': X_train, 'labels': y_train}, open("train.p", "wb"))
+        pickle.dump({'features': X_test, 'labels': y_test}, open("test.p", "wb"))
+        np.savetxt("labels.txt", np.unique(y_train))
+    else:
+        print("Loading dataset information from pickle files...")
+        train = pickle.load(open("train.p", "rb"))
+        test = pickle.load(open("test.p", "rb"))
+
+        X_train, y_train = train['features'], train['labels']
+        X_test, y_test = test['features'], test['labels']
 
     print()
     print("Image Shape: {}".format(X_train[0].shape))
