@@ -124,13 +124,6 @@ def load_data(url):
     y_train = np.concatenate((y_train, y_valid), axis=0)
     np.savetxt("labels.txt", np.unique(y_train))
 
-    print()
-    print("Image Shape: {}".format(X_train[0].shape))
-    print()
-    print("Training Set:   {} samples".format(len(X_train)))
-    print("Validation Set: {} samples".format(len(X_valid)))
-    print("Test Set:       {} samples".format(len(X_test)))
-
     # Perform Pre-processing for entire dataset (training, test, validation sets)
     X_train, y_train = generate_additional_data_rotate(X_train, y_train)
     X_train, y_train = generate_additional_data_translate(X_train, y_train)
@@ -139,6 +132,12 @@ def load_data(url):
     X_train = np.array([auto_contrast(x) for x in X_train])
     X_test = np.array([auto_contrast(x) for x in X_test])
 
+    print()
+    print("Image Shape: {}".format(X_train[0].shape))
+    print()
+    print("Training Set:   {} samples".format(len(X_train)))
+    print("Validation Set: {} samples".format(len(X_valid)))
+    print("Test Set:       {} samples".format(len(X_test)))
     return X_train, y_train, X_test, y_test
 
 
