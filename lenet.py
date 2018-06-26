@@ -15,7 +15,8 @@ def LeNet(x, keep_prob=1.0):
     print("Single scale LeNet", " with dropout" if keep_prob != 1.0 else "")
 
     with tf.variable_scope('P0'):
-        p0 = tf.image.convert_image_dtype(x, tf.float32)
+        p0 = tf.image.resize_images(x, (32, 32))
+        p0 = tf.image.convert_image_dtype(p0, tf.float32)
         p0 = tf.divide(tf.subtract(p0, 128.0), 128.0)
         print("P0: Input %s Output %s" % (x.get_shape(), p0.get_shape()))
 
@@ -84,16 +85,12 @@ def LeNet(x, keep_prob=1.0):
 
 
 def train(X_train, y_train, learning_rate=0.001, epochs=10, batch_size=128, save_graph="lenet.pb"):
-    # Extract input information
-    height, width, channels = X_train[0].shape
-    nclasses = len(np.unique(y_train))
-
     # Graph Nodes
-    features = tf.placeholder(tf.float32, shape=(None, height, width, channels), name='features')
+    features = tf.placeholder(tf.float32, shape=(None, None, None, 3), name='features')
     labels = tf.placeholder(tf.int64, shape=(None), name='labels')
-    keep_prob = tf.placeholder(tf.float32)
+    keep_prob = tf.placeholder(tf.float32, name='keep_prob')
 
-    logits = LeNet(x, keep_prob)
+    logits = LeNet(features, keep_prob)
 
     from sklearn.model_selection import train_test_split
     from sklearn.utils import shuffle
@@ -103,7 +100,7 @@ def train(X_train, y_train, learning_rate=0.001, epochs=10, batch_size=128, save
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
     loss_op = tf.reduce_mean(cross_entropy)
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
-    training_op = optimizer.minimize(loss_op, var_list=[weight8, bias8])
+    training_op = optimizer.minimize(loss_op)
 
     preds = tf.argmax(logits, 1)
     accuracy_op = tf.reduce_mean(tf.cast(tf.equal(preds, labels), tf.float32))
@@ -119,7 +116,7 @@ def train(X_train, y_train, learning_rate=0.001, epochs=10, batch_size=128, save
         sess = tf.get_default_session()
         for offset in range(0, num_examples, batch_size):
             batch_x, batch_y = X_data[offset:offset+batch_size], y_data[offset:offset+batch_size]
-            accuracy, loss = sess.run([accuracy_op, loss_op], feed_dict={features: batch_x, labels: batch_y})
+            accuracy, loss = sess.run([accuracy_op, loss_op], feed_dict={features: batch_x, labels: batch_y, keep_prob: 1.0})
             total_accuracy += (accuracy * len(batch_x))
             total_loss += (loss * len(batch_x))
         return total_accuracy / num_examples, total_loss / num_examples
@@ -134,7 +131,7 @@ def train(X_train, y_train, learning_rate=0.001, epochs=10, batch_size=128, save
             X_train, y_train = shuffle(X_train, y_train)
             for offset in range(0, num_examples, batch_size):
                 end = offset + batch_size
-                sess.run(training_op, feed_dict={features: X_train[offset:end], labels: y_train[offset:end]})
+                sess.run(training_op, feed_dict={features: X_train[offset:end], labels: y_train[offset:end], keep_prob: 0.5})
 
             training_accuracy, training_loss = evaluate(X_train, y_train)
             validation_accuracy, validation_loss = evaluate(X_valid, y_valid)
@@ -171,11 +168,14 @@ def inference(fname, model, labels):
     image = cv2.imread(fname)
     assert image is not None, "Failed to open [%s]" % (fname)
 
+    image = image.astype(np.float32)
+
     input_tensor = graph.get_tensor_by_name("import/features:0")
+    keep_prob_tensor = graph.get_tensor_by_name("import/keep_prob:0")
     output_tensor = graph.get_tensor_by_name("import/F7/Add:0")
 
     with tf.Session(graph=graph) as sess:
-        predictions = sess.run(output_tensor, feed_dict={input_tensor: np.expand_dims(image, 0)})
+        predictions = sess.run(output_tensor, feed_dict={input_tensor: np.expand_dims(image, 0), keep_prob_tensor: 1.0})
     results = np.squeeze(predictions)
 
     top_k = results.argsort()[-5:][::-1]

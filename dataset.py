@@ -45,6 +45,7 @@ def load_data(url):
 
     X_train = np.concatenate((X_train, X_valid), axis=0)
     y_train = np.concatenate((y_train, y_valid), axis=0)
+    np.savetxt("labels.txt", np.unique(y_train))
 
     print()
     print("Image Shape: {}".format(X_train[0].shape))
