@@ -25,11 +25,7 @@ def uncompress(file):
     zip_ref.close()
 
 def load_data(url):
-    if url:
-        download(url, 'traffic-sign-data.zip')
-    else:
-        # download traffic-sign-data
-        download('https://d17h27t6h515a5.cloudfront.net/topher/2017/February/5898cd6f_traffic-signs-data/traffic-signs-data.zip', 'traffic-sign-data.zip')
+    download(url, 'traffic-sign-data.zip')
     uncompress('traffic-sign-data.zip')
 
     training_file = 'train.p'
@@ -47,6 +43,9 @@ def load_data(url):
     X_valid, y_valid = valid['features'], valid['labels']
     X_test, y_test = test['features'], test['labels']
 
+    X_train = np.concatenate((X_train, X_valid), axis=0)
+    y_train = np.concatenate((y_train, y_valid), axis=0)
+
     print()
     print("Image Shape: {}".format(X_train[0].shape))
     print()
@@ -54,7 +53,7 @@ def load_data(url):
     print("Validation Set: {} samples".format(len(X_valid)))
     print("Test Set:       {} samples".format(len(X_test)))
 
-    return X_train + X_valid, y_train + y_valid, X_test, y_test
+    return X_train, y_train, X_test, y_test
 
 
 if __name__ == "__main__":
@@ -62,7 +61,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--url", help="dataset zip url", default=None)
+    parser.add_argument("--url", help="dataset zip url",
+                        default='https://d17h27t6h515a5.cloudfront.net/topher/2017/February/5898cd6f_traffic-signs-data/traffic-signs-data.zip')
     args = parser.parse_args()
 
     print(args)
