@@ -97,7 +97,7 @@ def train(X_train, y_train, learning_rate=0.001, epochs=10, batch_size=128, save
 
     X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, test_size=0.2, random_state=832289)
 
-    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
+    cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=tf.one_hot(labels, 43))
     loss_op = tf.reduce_mean(cross_entropy)
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     training_op = optimizer.minimize(loss_op)
