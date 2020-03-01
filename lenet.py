@@ -4,7 +4,6 @@ LeNet (Yann LeCunn Developed 1st breed of Neural Network)
 
 import tensorflow as tf
 import numpy as np
-import cv2
 import os
 
 
@@ -116,7 +115,8 @@ def train(X_train, y_train, learning_rate=0.001, epochs=10, batch_size=128, save
         sess = tf.get_default_session()
         for offset in range(0, num_examples, batch_size):
             batch_x, batch_y = X_data[offset:offset+batch_size], y_data[offset:offset+batch_size]
-            accuracy, loss = sess.run([accuracy_op, loss_op], feed_dict={features: batch_x, labels: batch_y, keep_prob: 1.0})
+            accuracy, loss = sess.run([accuracy_op, loss_op], feed_dict={
+                                      features: batch_x, labels: batch_y, keep_prob: 1.0})
             total_accuracy += (accuracy * len(batch_x))
             total_loss += (loss * len(batch_x))
         return total_accuracy / num_examples, total_loss / num_examples
@@ -131,7 +131,8 @@ def train(X_train, y_train, learning_rate=0.001, epochs=10, batch_size=128, save
             X_train, y_train = shuffle(X_train, y_train)
             for offset in range(0, num_examples, batch_size):
                 end = offset + batch_size
-                sess.run(training_op, feed_dict={features: X_train[offset:end], labels: y_train[offset:end], keep_prob: 0.5})
+                sess.run(training_op, feed_dict={
+                         features: X_train[offset:end], labels: y_train[offset:end], keep_prob: 0.5})
 
             training_accuracy, training_loss = evaluate(X_train, y_train)
             validation_accuracy, validation_loss = evaluate(X_valid, y_valid)
@@ -141,10 +142,12 @@ def train(X_train, y_train, learning_rate=0.001, epochs=10, batch_size=128, save
             print("Validation Accuracy = {:.3f} Loss = {:.3f}".format(validation_accuracy, validation_loss))
             print()
 
-        output_graph_def = tf.graph_util.convert_variables_to_constants(sess, tf.get_default_graph().as_graph_def(), ["F7/Add"])
+        output_graph_def = tf.graph_util.convert_variables_to_constants(
+            sess, tf.get_default_graph().as_graph_def(), ["F7/Add"])
 
         with tf.gfile.GFile(os.path.join(model_dir, save_graph), "wb") as f:
             f.write(output_graph_def.SerializeToString())
+
 
 def inference(fname, model, labels):
     """
@@ -156,7 +159,6 @@ def inference(fname, model, labels):
     Return
         predicted_label (str) - prediction result
     """
-    import cv2
     graph = tf.Graph()
     graph_def = tf.GraphDef()
 
@@ -165,10 +167,10 @@ def inference(fname, model, labels):
     with graph.as_default():
         tf.import_graph_def(graph_def)
 
-    image = cv2.imread(fname)
+    image = tf.io.read_file(fname)
     assert image is not None, "Failed to open [%s]" % (fname)
-
-    image = image.astype(np.float32)
+    image = tf.image.decode_image(image, channels=3)
+    image = tf.image.convert_image_dtype(image, tf.float32)
 
     input_tensor = graph.get_tensor_by_name("import/features:0")
     keep_prob_tensor = graph.get_tensor_by_name("import/keep_prob:0")
@@ -198,7 +200,8 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=2, help="number of training iterations")
     parser.add_argument("--batch_size", type=int, default=128, help="batch size for training")
     parser.add_argument("--train", action="store_true", help="train/retrain model")
-    parser.add_argument("--save_graph", default="lenet.pb", help="saves graph as *.pb while training or loads *.pb for inference")
+    parser.add_argument("--save_graph", default="lenet.pb",
+                        help="saves graph as *.pb while training or loads *.pb for inference")
     parser.add_argument("--labels", default="labels.txt", help="labels file")
     parser.add_argument("--infer", default=None, help="perform inference for file")
     args = parser.parse_args()
