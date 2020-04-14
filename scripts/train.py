@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+import os
+
 import tensorflow as tf
 
 
@@ -28,8 +30,6 @@ if __name__ == "__main__":
 
     # Normalize pixel values to be between 0 and 1
     train_images, test_images = train_images / 255.0, test_images / 255.0
-    class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer',
-                   'dog', 'frog', 'horse', 'ship', 'truck']
 
     # Create the convolution network
     model = LeNet()
@@ -41,8 +41,13 @@ if __name__ == "__main__":
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                   metrics=['accuracy'])
 
-    model.fit(train_images, train_labels, epochs=10,
-              validation_data=(test_images, test_labels))
+    model.fit(train_images, train_labels, epochs=1, validation_data=(test_images, test_labels))
 
+    # Evalaute the model
     test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)
-    print(test_acc)
+    print("test accuracy: ", test_acc)
+
+    # Save model
+    if not os.path.exists("saved_model"):
+        os.mkdir("saved_model")
+    model.save("saved_model")

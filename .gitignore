@@ -1,3 +1,4 @@
-.pb
-.p
-.tar.gz
+*.pb
+*.tflite
+saved_model/
+.vscode/
