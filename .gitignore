@@ -1,4 +1,1 @@
-*.pb
-*.tflite
-saved_model/
 .vscode/
